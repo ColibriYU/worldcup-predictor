@@ -298,13 +298,23 @@ def usage_summary(status: pd.DataFrame) -> dict[str, str]:
         runs_left = str(int(float(remaining) // float(last_cost)))
     else:
         runs_left = "未知"
+    rows = int(row.get("rows", 0) or 0)
+    error = str(row.get("error", "") or "").strip()
+    if error:
+        suggestion = f"The Odds API 已尝试请求但返回错误：{error}"
+    elif rows <= 0 and headers:
+        suggestion = "The Odds API 已接通并消耗额度，但本次没有匹配到当前赛程盘口，页面暂用本地样例盘口。"
+    elif rows > 0:
+        suggestion = "The Odds API 已接通。云端按北京时间 14:00 和 19:00 两个档位刷新，其他刷新使用缓存保护额度。"
+    else:
+        suggestion = "尚未成功拉取 The Odds API。"
     return {
         "updated": str(row.get("fetched_at_utc", "暂无")),
         "remaining": str(remaining or "未知"),
         "used": str(used or "未知"),
         "last_cost": str(last_cost or "未知"),
         "runs_left": runs_left,
-        "suggestion": "当前不会自动更新；需要手动运行更新脚本，或后续加定时任务。",
+        "suggestion": suggestion,
     }
 
 
