@@ -324,7 +324,7 @@ def render_status_band(odds_source: str, status: pd.DataFrame) -> None:
     )
 
 
-@st.cache_data(ttl=60 * 60)
+@st.cache_data
 def cached_data(
     cache_version: str,
     api_key: str | None,
