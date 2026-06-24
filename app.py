@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from html import escape
 import os
 import sys
 from pathlib import Path
@@ -53,15 +54,37 @@ def inject_style() -> None:
         div[data-testid="stHeader"] {
             background: rgba(244, 248, 251, 0.78);
         }
+        .main .block-container {
+            padding-top: 1.15rem;
+            padding-bottom: 1.8rem;
+            max-width: 1440px;
+        }
+        div[data-testid="stVerticalBlock"] {
+            gap: 0.45rem;
+        }
+        div[data-testid="stHorizontalBlock"] {
+            gap: 0.65rem;
+        }
         div[data-testid="stMetric"] {
             background: #ffffff;
             border: 1px solid #dbe7e2;
             border-radius: 8px;
-            padding: 12px 14px;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+            padding: 8px 10px;
+            box-shadow: 0 5px 14px rgba(15, 23, 42, 0.05);
+        }
+        div[data-testid="stMetricLabel"] {
+            font-size: 0.78rem;
+        }
+        div[data-testid="stMetricValue"] {
+            font-size: 1.35rem;
         }
         div[data-testid="stMetricValue"] {
             color: #0f766e;
+        }
+        div[data-testid="stMarkdownContainer"] p,
+        div[data-testid="stMarkdownContainer"] li {
+            margin-bottom: 0.22rem;
+            line-height: 1.35;
         }
         div[data-testid="stExpander"] {
             border: 1px solid #dbe7e2;
@@ -69,12 +92,12 @@ def inject_style() -> None:
             background: #ffffff;
         }
         .status-band {
-            padding: 14px 16px;
+            padding: 10px 12px;
             border-radius: 8px;
             border: 1px solid #cfe3da;
             background: #ffffff;
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
-            margin: 8px 0 18px;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+            margin: 4px 0 12px;
         }
         .status-band strong {
             color: #0f766e;
@@ -87,18 +110,30 @@ def inject_style() -> None:
             background: #e0f2fe;
             border: 1px solid #bae6fd;
             font-size: 0.82rem;
-            margin-bottom: 6px;
+            margin-bottom: 2px;
         }
         .score-line {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             gap: 10px;
-            padding: 7px 10px;
+            min-height: 24px;
+            padding: 2px 8px;
             border-radius: 7px;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            margin-bottom: 6px;
+            margin-bottom: 0;
+            font-size: 0.88rem;
             font-variant-numeric: tabular-nums;
+        }
+        .score-list {
+            display: grid;
+            gap: 3px;
+            margin: 0 0 4px;
+        }
+        .score-line span,
+        .score-line b {
+            line-height: 1.05;
         }
         .score-line b {
             color: #0f766e;
@@ -107,8 +142,8 @@ def inject_style() -> None:
             background: #ffffff;
             border: 1px solid #dbe7e2;
             border-radius: 8px;
-            padding: 10px 12px;
-            margin: 8px 0;
+            padding: 7px 9px;
+            margin: 4px 0;
         }
         .index-title {
             display: flex;
@@ -116,7 +151,7 @@ def inject_style() -> None:
             align-items: center;
             font-weight: 700;
             color: #0f172a;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         .index-pill-low,
         .index-pill-mid,
@@ -143,7 +178,13 @@ def inject_style() -> None:
             border-radius: 999px;
             background: #e2e8f0;
             overflow: hidden;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
+        }
+        .index-reason {
+            color: #475569;
+            font-size: 0.78rem;
+            line-height: 1.22;
+            margin-top: 1px;
         }
         .index-fill-upset {
             height: 100%;
@@ -192,11 +233,15 @@ def pct(value: float) -> str:
 
 
 def render_score_list(frame: pd.DataFrame) -> None:
+    lines = []
     for _, row in frame.iterrows():
-        st.markdown(
-            f"<div class='score-line'><span>{row['score']}</span><b>{row['probability_pct']:.1f}%</b></div>",
-            unsafe_allow_html=True,
+        lines.append(
+            "<div class='score-line'>"
+            f"<span>{escape(str(row['score']))}</span>"
+            f"<b>{float(row['probability_pct']):.1f}%</b>"
+            "</div>"
         )
+    st.markdown(f"<div class='score-list'>{''.join(lines)}</div>", unsafe_allow_html=True)
 
 
 def pill_class(level: str) -> str:
@@ -210,20 +255,23 @@ def pill_class(level: str) -> str:
 def render_index_box(title: str, payload: dict[str, object], fill_class: str) -> None:
     index = float(payload["index"])
     level = str(payload["level"])
+    reasons = "".join(
+        f"<div class='index-reason'>- {escape(str(reason))}</div>"
+        for reason in list(payload.get("reasons", []))[:3]
+    )
     st.markdown(
         f"""
         <div class="index-box">
             <div class="index-title">
-                <span>{title}</span>
-                <span class="{pill_class(level)}">{level} · {index:.0f}</span>
+                <span>{escape(title)}</span>
+                <span class="{pill_class(level)}">{escape(level)} · {index:.0f}</span>
             </div>
             <div class="index-bar"><div class="{fill_class}" style="width: {index:.0f}%"></div></div>
+            {reasons}
         </div>
         """,
         unsafe_allow_html=True,
     )
-    for reason in list(payload.get("reasons", []))[:3]:
-        st.write(f"- {reason}")
 
 
 def render_narrative_report(report: dict[str, object]) -> None:
@@ -408,11 +456,13 @@ def render_match_card(match: pd.Series, prediction: dict[str, object]) -> None:
 
             st.markdown("**预测比分**")
             render_score_list(top_scores.head(5))
+            index_cols = st.columns(2)
+            with index_cols[0]:
+                render_index_box("冷门指数", prediction["upset"], "index-fill-upset")
+            with index_cols[1]:
+                render_index_box("大比分指数", prediction["big_score"], "index-fill-goals")
 
         with body_right:
-            render_index_box("冷门指数", prediction["upset"], "index-fill-upset")
-            render_index_box("大比分指数", prediction["big_score"], "index-fill-goals")
-
             st.markdown("**可能影响因素**")
             if factors.empty:
                 st.write("暂无影响因素数据")
