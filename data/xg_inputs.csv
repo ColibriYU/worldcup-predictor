@@ -1,0 +1,27 @@
+match_id,team,shot_quality,shot_location,defensive_pressure,transition_attack,set_piece_xg,tempo_factor
+FRA-SEN-A,France,1.18,1.12,0.88,1.14,0.24,1.04
+FRA-SEN-A,Senegal,0.94,0.91,1.12,1.18,0.18,0.98
+BRA-GER-B,Brazil,1.1,1.06,0.94,1.08,0.21,1.03
+BRA-GER-B,Germany,1.02,1.0,1.02,1.03,0.25,1.0
+ARG-ENG-C,Argentina,1.04,1.03,0.96,0.98,0.2,0.99
+ARG-ENG-C,England,1.01,0.99,0.98,1.05,0.23,1.0
+POR-UZB-K,Portugal,1.15,1.09,0.9,1.08,0.27,1.03
+POR-UZB-K,Uzbekistan,0.88,0.89,1.16,1.02,0.16,0.96
+ENG-GHA-L,England,1.1,1.05,0.92,1.06,0.24,1.02
+ENG-GHA-L,Ghana,0.91,0.92,1.1,1.1,0.18,0.98
+PAN-CRO-L,Panama,0.82,0.86,1.18,1.06,0.15,0.96
+PAN-CRO-L,Croatia,1.03,1.02,0.98,1.01,0.22,1.0
+COL-COD-K,Colombia,1.05,1.03,0.95,1.04,0.23,1.01
+COL-COD-K,Congo DR,0.88,0.9,1.12,1.08,0.17,0.97
+SUI-CAN-B,Switzerland,1.02,1.0,0.98,0.99,0.22,1.0
+SUI-CAN-B,Canada,0.95,0.96,1.05,1.09,0.18,1.01
+BIH-QAT-C,Bosnia and Herzegovina,0.96,0.97,1.03,0.98,0.2,0.99
+BIH-QAT-C,Qatar,0.88,0.9,1.12,1.04,0.17,0.98
+SCO-BRA-C,Scotland,0.92,0.93,1.09,1.02,0.21,0.98
+SCO-BRA-C,Brazil,1.12,1.08,0.92,1.09,0.23,1.03
+MAR-HAI-B,Morocco,1.05,1.04,0.95,1.03,0.24,1.01
+MAR-HAI-B,Haiti,0.78,0.84,1.22,1.06,0.14,0.96
+CZE-MEX-A,Czechia,0.98,0.99,1.02,0.98,0.22,1.0
+CZE-MEX-A,Mexico,1.02,1.02,0.99,1.03,0.21,1.01
+RSA-KOR-H,South Africa,0.9,0.92,1.1,1.05,0.17,0.98
+RSA-KOR-H,Korea Republic,1.0,1.01,0.99,1.04,0.2,1.0

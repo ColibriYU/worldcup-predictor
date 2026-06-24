@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.streamlit/
+.venv/
+venv/
+.env
+streamlit.*.log
+data/odds_live.csv
+data/odds_history.csv
+data/odds_api_status.json
+data/odds_raw/

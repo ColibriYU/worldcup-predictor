@@ -1,0 +1,15 @@
+group,team,played,wins,draws,losses,points,goals_for,goals_against,goal_difference,status,note
+Group A,Mexico,2,2,0,0,6,4,1,3,已出线，争小组头名,6分球队可能根据对手和淘汰赛路径选择轮换或控节奏
+Group A,Czechia,2,1,0,1,3,2,2,0,争取出线,本场至少需要拿分，落后时会提高冒险程度
+Group A,South Africa,2,0,1,1,1,1,3,-2,必须抢分,需要胜利才有更清晰的出线路径
+Group A,Korea Republic,2,0,1,1,1,2,3,-1,必须抢分,平局可能不够，后段可能主动提速
+Group B,Morocco,2,2,0,0,6,5,1,4,已出线，可能轮换,6分在手，存在保存主力和控制伤病风险的动机
+Group B,Switzerland,2,1,0,1,3,3,2,1,争取出线,赢球可基本锁定主动权，平局仍需看其他结果
+Group B,Canada,2,1,0,1,3,2,3,-1,争取出线,仍有出线主动权，本场不会轻易放弃对攻机会
+Group B,Haiti,2,0,0,2,0,1,5,-4,必须抢分,只有赢球才可能保留希望，比赛后段可能更开放
+Group C,Brazil,2,2,0,0,6,5,1,4,已出线，可能轮换,6分在手，强队有轮换和控制比赛强度的空间
+Group C,Scotland,2,1,0,1,3,2,3,-1,争取出线,拿分价值很高，低位防守和定位球会是主要路径
+Group C,Bosnia and Herzegovina,2,0,1,1,1,2,3,-1,必须抢分,若迟迟打不开局面，后段会更早冒险
+Group C,Qatar,2,0,1,1,1,1,3,-2,必须抢分,仍需抢分，可能通过控球和低节奏争取机会
+Group H,Korea Republic,2,1,0,1,3,3,2,1,争取出线,赢球可显著提高晋级概率，战意较高
+Group H,South Africa,2,0,1,1,1,1,3,-2,必须抢分,需要抢分，落后时会提高压上风险

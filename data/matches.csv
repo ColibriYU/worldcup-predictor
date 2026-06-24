@@ -1,0 +1,14 @@
+match_id,group,home_team,away_team,neutral_site,notes
+FRA-SEN-A,Group A,France,Senegal,True,Sample match for dashboard workflow
+BRA-GER-B,Group B,Brazil,Germany,True,Sample match for model calibration
+ARG-ENG-C,Group C,Argentina,England,True,Sample match for probability comparison
+POR-UZB-K,Group K,Portugal,Uzbekistan,True,Official 2026-06-23 fixture prediction
+ENG-GHA-L,Group L,England,Ghana,True,Official 2026-06-23 fixture prediction
+PAN-CRO-L,Group L,Panama,Croatia,True,Official 2026-06-23 fixture prediction
+COL-COD-K,Group K,Colombia,Congo DR,True,Official 2026-06-23 fixture prediction
+SUI-CAN-B,Group B,Switzerland,Canada,true,Official 2026-06-24 fixture prediction
+BIH-QAT-C,Group C,Bosnia and Herzegovina,Qatar,true,Official 2026-06-24 fixture prediction
+SCO-BRA-C,Group C,Scotland,Brazil,true,Official 2026-06-24 fixture prediction
+MAR-HAI-B,Group B,Morocco,Haiti,true,Official 2026-06-24 fixture prediction
+CZE-MEX-A,Group A,Czechia,Mexico,true,Official 2026-06-24 fixture prediction
+RSA-KOR-H,Group H,South Africa,Korea Republic,true,Official 2026-06-24 fixture prediction
