@@ -18,7 +18,7 @@ if str(SRC) not in sys.path:
 
 from worldcup_predictor import PredictionConfig, predict_match
 from worldcup_predictor.data import load_data
-from worldcup_predictor.monitoring import combined_value_bets, odds_change_summary
+from worldcup_predictor.monitoring import bookmaker_value_bets, combined_value_bets, odds_change_summary
 from worldcup_predictor.narrative import build_narrative_report
 
 
@@ -194,6 +194,61 @@ def inject_style() -> None:
             height: 100%;
             background: linear-gradient(90deg, #14b8a6, #2563eb);
         }
+        .bet-box {
+            background: #ffffff;
+            border: 1px solid #dbe7e2;
+            border-radius: 8px;
+            padding: 7px 9px;
+            margin: 4px 0;
+        }
+        .bet-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .bet-pill-good,
+        .bet-pill-watch,
+        .bet-pill-none {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+        .bet-pill-good {
+            color: #166534;
+            background: #dcfce7;
+        }
+        .bet-pill-watch {
+            color: #92400e;
+            background: #fef3c7;
+        }
+        .bet-pill-none {
+            color: #475569;
+            background: #e2e8f0;
+        }
+        .bet-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            color: #334155;
+            font-size: 0.84rem;
+            line-height: 1.28;
+            font-variant-numeric: tabular-nums;
+        }
+        .bet-line b {
+            color: #0f766e;
+        }
+        .bet-note {
+            color: #64748b;
+            font-size: 0.78rem;
+            line-height: 1.28;
+            margin-top: 4px;
+        }
         .narrative-note {
             padding: 10px 12px;
             border-radius: 8px;
@@ -268,6 +323,49 @@ def render_index_box(title: str, payload: dict[str, object], fill_class: str) ->
             </div>
             <div class="index-bar"><div class="{fill_class}" style="width: {index:.0f}%"></div></div>
             {reasons}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_bet_box(match_odds: pd.DataFrame, prediction: dict[str, object], min_edge: float) -> None:
+    value_bets = bookmaker_value_bets(
+        match_odds,
+        prediction["final_probability"],
+        min_edge=min_edge,
+    )
+    if value_bets.empty:
+        st.markdown(
+            """
+            <div class="bet-box">
+                <div class="bet-title">
+                    <span>值得下注</span>
+                    <span class="bet-pill-none">暂无</span>
+                </div>
+                <div class="bet-note">当前胜平负方向没有达到设定 Edge 阈值，建议观望或等待赔率变化。</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        return
+
+    best = value_bets.iloc[0]
+    edge = float(best["edge"])
+    probability_gap = float(best["probability_gap"])
+    level = "强关注" if edge >= max(0.08, min_edge * 2) and probability_gap > 0 else "可关注"
+    pill_class_name = "bet-pill-good" if level == "强关注" else "bet-pill-watch"
+    st.markdown(
+        f"""
+        <div class="bet-box">
+            <div class="bet-title">
+                <span>值得下注</span>
+                <span class="{pill_class_name}">{escape(level)} · Edge {edge * 100:.1f}%</span>
+            </div>
+            <div class="bet-line"><span>方向</span><b>{escape(str(best['outcome_label']))}</b></div>
+            <div class="bet-line"><span>公司 / 赔率</span><b>{escape(str(best['bookmaker']))} · {float(best['odds']):.2f}</b></div>
+            <div class="bet-line"><span>模型概率 / 公允赔率</span><b>{pct(float(best['model_probability']))} · {float(best['fair_odds']):.2f}</b></div>
+            <div class="bet-note">只表示模型相对盘口有价格优势，不代表确定收益。</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -459,7 +557,12 @@ def schedule_view(frame: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def render_match_card(match: pd.Series, prediction: dict[str, object]) -> None:
+def render_match_card(
+    match: pd.Series,
+    prediction: dict[str, object],
+    odds: pd.DataFrame,
+    min_edge: float,
+) -> None:
     home = prediction["home_team"]
     away = prediction["away_team"]
     final_probability = prediction["final_probability"]
@@ -499,6 +602,11 @@ def render_match_card(match: pd.Series, prediction: dict[str, object]) -> None:
                 render_index_box("冷门指数", prediction["upset"], "index-fill-upset")
             with index_cols[1]:
                 render_index_box("大比分指数", prediction["big_score"], "index-fill-goals")
+            render_bet_box(
+                odds[odds["match_id"] == prediction["match_id"]],
+                prediction,
+                min_edge,
+            )
 
         with body_right:
             st.markdown("**可能影响因素**")
@@ -790,7 +898,7 @@ for _, fixture in available_fixture.iterrows():
         odds_source=odds_source,
     )
     predictions.append(prediction)
-    render_match_card(fixture, prediction)
+    render_match_card(fixture, prediction, data["odds"], value_edge)
 
 render_monitoring(
     odds=data["odds"],
