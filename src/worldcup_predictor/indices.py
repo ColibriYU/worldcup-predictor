@@ -65,19 +65,35 @@ def upset_index(
         level = "低"
 
     reasons = [
-        f"{favorite_team}热门不胜概率 {favorite_non_win * 100:.1f}%",
+        f"{favorite_team}不胜概率 {favorite_non_win * 100:.1f}%",
         f"{underdog_team}直接赢球概率 {underdog_win * 100:.1f}%",
     ]
-    if draw > 0.17:
-        reasons.append(f"平局概率 {draw * 100:.1f}%，需要防热门被逼平")
-    if low_score_factor > 0.25:
-        reasons.append("预期总进球偏低，低比分会放大冷门/平局概率")
-    if model_market_gap > 0.02:
-        reasons.append("模型给弱队的概率高于市场去水概率")
-    if favorite_doubt > 0.02:
-        reasons.append("模型对热门方向比市场更谨慎")
-    if favorite_heat > 0.20:
+    if draw >= 0.29 and favorite_non_win >= 0.48:
+        reasons.append(f"平局概率 {draw * 100:.1f}%，热门被拖平风险较突出")
+    elif draw >= 0.26 and low_score_factor > 0.30:
+        reasons.append(f"平局概率 {draw * 100:.1f}%，低比分环境提高平局权重")
+    elif draw <= 0.20 and underdog_win < 0.18:
+        reasons.append("平局和弱队赢球概率都偏低，冷门路径较窄")
+
+    if low_score_factor > 0.45:
+        reasons.append("预期总进球明显偏低，低比分会放大冷门/平局概率")
+    elif low_score_factor > 0.25 and level != "低":
+        reasons.append("预期总进球偏低，冷门更可能来自小比分僵持")
+
+    if model_market_gap > 0.04 and level != "低":
+        reasons.append("模型明显高看弱队，市场可能低估其不败空间")
+    elif model_market_gap > 0.02 and level != "低":
+        reasons.append("模型给弱队的概率略高于市场去水概率")
+
+    if favorite_doubt > 0.04 and level != "低":
+        reasons.append("模型对热门方向明显比市场更谨慎")
+    elif favorite_doubt > 0.02 and level != "低":
+        reasons.append("模型对热门方向略比市场更谨慎")
+
+    if favorite_heat > 0.30 and level != "低":
         reasons.append("市场对热门队定价偏热，存在被高估风险")
+    elif level == "低":
+        reasons.append(f"{favorite_team}胜率支撑较稳，冷门更多依赖早段意外或红黄牌变量")
 
     return {
         "index": index,
