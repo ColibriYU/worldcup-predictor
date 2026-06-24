@@ -241,6 +241,11 @@ def render_narrative_report(report: dict[str, object]) -> None:
         f"<div class='narrative-summary'>{report['summary']}</div>",
         unsafe_allow_html=True,
     )
+    narrative_scores = list(report.get("narrative_scores", []))
+    if narrative_scores:
+        st.markdown("**叙事比分候选（不改变量化概率）**")
+        for item in narrative_scores:
+            st.write(f"- {item['score']}：{item['tag']}。{item['reason']}")
 
     iching = report["iching"]
     st.markdown("**易经依据**")

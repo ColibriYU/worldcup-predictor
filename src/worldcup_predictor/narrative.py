@@ -166,11 +166,11 @@ def _relationship_sentence(team_a: str, team_b: str, relation: str) -> str:
 
 def _score_direction(narrative_score: float) -> str:
     if narrative_score >= 4:
-        return "叙事比分方向：强势方赢面叙事较浓，倾向小胜到两球胜，但仍不替代量化比分概率。"
+        return "叙事比分方向：强势方赢面叙事较浓，倾向小胜到两球胜，但允许保留反向冷门分支。"
     if narrative_score >= 1:
-        return "叙事比分方向：更像强势方小胜，若久攻不下也可能滑向一球差。"
+        return "叙事比分方向：更像强势方小胜，若久攻不下也可能滑向平局或一球差。"
     if narrative_score <= -4:
-        return "叙事比分方向：弱势方不败或制造冷门的叙事较强，需防平局和低比分反向结果。"
+        return "叙事比分方向：弱势方不败或制造冷门的叙事较强，可以给出偏离模型的爆冷比分。"
     if narrative_score <= -1:
         return "叙事比分方向：热门方会踢得不顺，倾向平局、弱势方不败，或强队非常艰难的小胜。"
     return "叙事比分方向：双方力量接近，倾向低比分拉锯，平局或一球差更符合叙事。"
@@ -179,7 +179,103 @@ def _score_direction(narrative_score: float) -> str:
 def _score_list_text(score_candidates: list[str] | None) -> str:
     if not score_candidates:
         return ""
-    return "量化模型的高频比分可参考：" + "、".join(score_candidates[:3]) + "。"
+    return "量化模型的高频比分仅作概率参考：" + "、".join(score_candidates[:3]) + "。"
+
+
+def _future_card_score(tarot: dict[str, Any]) -> float:
+    for card in tarot.get("cards", []):
+        if card.get("position") == "未来":
+            return float(card.get("score", 0) or 0)
+    return 0.0
+
+
+def _narrative_score_candidates(
+    team_a: str,
+    team_b: str,
+    match_time: Any,
+    narrative_score: float,
+    iching: dict[str, Any],
+    tarot: dict[str, Any],
+) -> list[dict[str, str]]:
+    rng = _seeded_rng(team_a, team_b, match_time, "narrative-score-candidates")
+    future_score = _future_card_score(tarot)
+    volatile = (
+        int(iching["changing_line"]) in {3, 4, 6}
+        or abs(future_score) >= 3
+        or str(iching["transformed_relation"]) in {"被克", "克"}
+    )
+
+    if narrative_score <= -4:
+        pool = [
+            ("0-1", "爆冷小胜", f"{team_b} 低位守住后偷到关键球"),
+            ("1-2", "反向剧情", f"{team_a} 压上后被 {team_b} 打出转换"),
+            ("1-1", "热门受阻", "主动方久攻不下，后段被拖入拉锯"),
+            ("0-0", "低比分僵局", "节奏被压低，进攻质量不足以打穿防线"),
+            ("2-3", "大波动冷门", "后段大开大合，弱势叙事方反而抓住最后机会"),
+        ]
+    elif narrative_score <= -1:
+        pool = [
+            ("1-1", "平局冷门", "热门优势不顺，比赛被拖进消耗战"),
+            ("0-1", "低比分爆冷", f"{team_b} 依靠反击或定位球建立优势"),
+            ("1-2", "后段反转", "主动方阵型拉长后给出身后空间"),
+            ("0-0", "沉闷僵局", "双方都难以连续制造高质量机会"),
+            ("2-2", "开放平局", "若早早进球，比赛会进入互相修正的高波动区"),
+        ]
+    elif narrative_score < 1:
+        pool = [
+            ("1-1", "均势拉锯", "双方叙事力量接近，一球后仍可能回到平衡"),
+            ("0-0", "低节奏僵局", "前段试探过长，进球窗口被压缩"),
+            ("2-2", "节奏失控", "中后段互有攻防，防线距离被拉开"),
+            ("1-0", f"{team_a} 艰难小胜", "主动方把一次优势转化为结果"),
+            ("0-1", f"{team_b} 冷门小胜", "反击方抓住少数高价值机会"),
+        ]
+    elif narrative_score < 4:
+        pool = [
+            ("1-0", f"{team_a} 小胜", "主动方有优势但兑现效率一般"),
+            ("2-1", f"{team_a} 险胜", "优势方能进球，也会给对手反击窗口"),
+            ("1-1", "优势受阻", "控球或压迫未必等于持续破门"),
+            ("2-2", "高波动平局", "若早段打开局面，后段可能互相交换机会"),
+            ("0-1", "反向冷门候选", f"{team_a} 冒进时，{team_b} 有偷袭空间"),
+        ]
+    else:
+        pool = [
+            ("2-0", f"{team_a} 优势兑现", "主动方节奏和质量都能持续压制"),
+            ("2-1", f"{team_a} 控局险胜", "强势方占优，但对手仍有破门窗口"),
+            ("3-1", "后段拉开", "领先后空间变大，比分可能被继续放大"),
+            ("1-0", "保守小胜", "优势方更重视控制风险而不是打穿比分"),
+            ("1-2", "反向冷门候选", f"{team_a} 叙事过热时，{team_b} 可能打出反扑"),
+        ]
+
+    if volatile:
+        swing = (
+            ("2-3", "极端波动", f"动爻/未来牌提示后段变数，{team_b} 有冷门大比分分支")
+            if narrative_score <= 0
+            else ("3-2", "极端波动", f"动爻/未来牌提示后段变数，{team_a} 可能险胜但防线不稳")
+        )
+        pool.insert(1, swing)
+
+    primary = pool[:2]
+    rest = pool[2:]
+    rng.shuffle(rest)
+    selected = primary + rest[:2]
+    return [
+        {"score": score, "tag": tag, "reason": reason}
+        for score, tag, reason in selected
+    ]
+
+
+def _narrative_score_text(narrative_scores: list[dict[str, str]]) -> str:
+    if not narrative_scores:
+        return ""
+    items = [
+        f"{item['score']}（{item['tag']}：{item['reason']}）"
+        for item in narrative_scores[:4]
+    ]
+    return (
+        "叙事比分候选（允许偏离量化模型）："
+        + "；".join(items)
+        + "。这些比分只用于赛前报告，不修改真实预测概率。"
+    )
 
 
 def _weak_state(state: str) -> bool:
@@ -361,6 +457,7 @@ def build_match_summary(
     tarot: dict[str, Any],
     narrative_score: float,
     score_candidates: list[str] | None = None,
+    narrative_scores: list[dict[str, str]] | None = None,
 ) -> str:
     body_weak = _weak_state(str(iching["body_state"]))
     use_strong = str(iching["use_state"]) in {"旺", "相"}
@@ -399,6 +496,7 @@ def build_match_summary(
     )
     score_direction = _score_direction(narrative_score)
     score_text = _score_list_text(score_candidates)
+    narrative_score_text = _narrative_score_text(narrative_scores or [])
 
     return (
         f"{team_a} vs {team_b}（{iching['hexagram']}变{iching['transformed']}）。"
@@ -414,7 +512,7 @@ def build_match_summary(
         f"处「{iching['transformed_use_state']}」地，{transformed_relation}"
         f"塔罗三张牌给出的阶段线是：{tarot['timeline']}。{tarot['synthesis']}"
         f"综合来看，{opening_pace}；{late_pace}。{risk}"
-        f"{score_direction}{score_text}"
+        f"{score_direction}{narrative_score_text}{score_text}"
     )
 
 
@@ -427,11 +525,28 @@ def build_narrative_report(
     iching = iching_reading(team_a, team_b, match_time)
     tarot = tarot_reading(team_a, team_b, match_time)
     narrative_score = _clamp(float(iching["score"]) + float(tarot["score"]), -10, 10)
-    summary = build_match_summary(team_a, team_b, iching, tarot, narrative_score, score_candidates)
+    narrative_scores = _narrative_score_candidates(
+        team_a,
+        team_b,
+        match_time,
+        narrative_score,
+        iching,
+        tarot,
+    )
+    summary = build_match_summary(
+        team_a,
+        team_b,
+        iching,
+        tarot,
+        narrative_score,
+        score_candidates,
+        narrative_scores,
+    )
     return {
         "narrative_score": round(narrative_score, 2),
         "iching_contribution": iching["score"],
         "tarot_contribution": tarot["score"],
+        "narrative_scores": narrative_scores,
         "iching": iching,
         "tarot": tarot,
         "summary": summary,
