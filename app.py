@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import os
 import sys
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -20,7 +21,26 @@ from worldcup_predictor.monitoring import combined_value_bets, odds_change_summa
 from worldcup_predictor.narrative import build_narrative_report
 
 
-DATA_CACHE_VERSION = "narrative-v1"
+DATA_CACHE_VERSION = "narrative-v2"
+
+
+def secret_value(name: str) -> str | None:
+    try:
+        value = st.secrets.get(name)
+    except Exception:
+        value = None
+    return str(value).strip() if value else os.getenv(name)
+
+
+def odds_update_slot(now: datetime | None = None) -> str:
+    now = now or datetime.now(ZoneInfo("Asia/Shanghai"))
+    if now.hour < 14:
+        slot = "pre_1400"
+    elif now.hour < 19:
+        slot = "post_1400"
+    else:
+        slot = "post_1900"
+    return f"{now.date().isoformat()}-{slot}"
 
 
 def inject_style() -> None:
@@ -304,10 +324,15 @@ def render_status_band(odds_source: str, status: pd.DataFrame) -> None:
     )
 
 
-@st.cache_data
-def cached_data(cache_version: str) -> dict[str, pd.DataFrame]:
+@st.cache_data(ttl=60 * 60)
+def cached_data(
+    cache_version: str,
+    api_key: str | None,
+    update_slot: str,
+) -> dict[str, pd.DataFrame]:
     _ = cache_version
-    return load_data()
+    _ = update_slot
+    return load_data(api_key=api_key)
 
 
 def schedule_view(frame: pd.DataFrame) -> pd.DataFrame:
@@ -539,7 +564,8 @@ def render_monitoring(
 st.set_page_config(page_title="世界杯今日预测", layout="wide")
 st.title("世界杯今日预测")
 
-data = cached_data(DATA_CACHE_VERSION)
+odds_api_key = secret_value("THE_ODDS_API_KEY")
+data = cached_data(DATA_CACHE_VERSION, odds_api_key, odds_update_slot())
 required_keys = {
     "matches",
     "team_stats",
@@ -558,7 +584,7 @@ required_keys = {
 }
 if not required_keys.issubset(data):
     st.cache_data.clear()
-    data = load_data()
+    data = load_data(api_key=odds_api_key)
 
 matches = data["matches"]
 schedule = data["worldcup_schedule"]

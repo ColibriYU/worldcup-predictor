@@ -1,11 +1,22 @@
 from __future__ import annotations
 
-from pathlib import Path
 import json
+import os
+from pathlib import Path
 
 import pandas as pd
 
-from .monitoring import filter_outlier_odds
+from .monitoring import append_odds_history, filter_outlier_odds
+from .odds_api import (
+    DEFAULT_MARKETS,
+    DEFAULT_REGIONS,
+    DEFAULT_SPORT,
+    OddsApiConfig,
+    fetch_odds,
+    normalize_odds_response,
+    write_raw_snapshot,
+    write_status,
+)
 
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
@@ -39,7 +50,99 @@ def _read_optional_json_frame(path: Path) -> pd.DataFrame:
     return pd.DataFrame([json.loads(path.read_text(encoding="utf-8"))])
 
 
-def load_data(data_dir: Path = DATA_DIR) -> dict[str, pd.DataFrame]:
+def _write_error_status(
+    path: Path,
+    *,
+    sport: str,
+    regions: str,
+    markets: str,
+    error: Exception,
+) -> None:
+    status = {
+        "provider": "the_odds_api",
+        "fetched_at_utc": pd.Timestamp.utcnow().isoformat(),
+        "sport": sport,
+        "regions": regions,
+        "markets": markets,
+        "rows": 0,
+        "raw_path": "",
+        "usage_headers": {},
+        "unmatched_events": [],
+        "error": str(error),
+    }
+    path.write_text(json.dumps(status, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def update_live_odds(
+    *,
+    api_key: str,
+    data_dir: Path = DATA_DIR,
+    sport: str = DEFAULT_SPORT,
+    regions: str = DEFAULT_REGIONS,
+    markets: str = DEFAULT_MARKETS,
+    bookmakers: str | None = None,
+) -> None:
+    matches = pd.read_csv(data_dir / "matches.csv")
+    team_aliases = pd.read_csv(data_dir / "team_aliases.csv")
+    output_path = data_dir / "odds_live.csv"
+    previous_path = output_path if output_path.exists() else data_dir / "odds.csv"
+    previous_odds = pd.read_csv(previous_path) if previous_path.exists() else pd.DataFrame()
+    config = OddsApiConfig(
+        api_key=api_key,
+        sport=sport,
+        regions=regions,
+        markets=markets,
+        bookmakers=bookmakers,
+    )
+
+    try:
+        events, usage_headers = fetch_odds(config)
+        raw_path = write_raw_snapshot(events, data_dir / "odds_raw")
+        odds, unmatched = normalize_odds_response(
+            events,
+            matches,
+            team_aliases=team_aliases,
+            previous_odds=previous_odds,
+            include_unlisted_events=True,
+        )
+        odds = filter_outlier_odds(odds)
+        if odds.empty:
+            write_status(
+                data_dir / "odds_api_status.json",
+                rows=0,
+                raw_path=raw_path,
+                config=config,
+                usage_headers=usage_headers,
+                unmatched_events=unmatched,
+            )
+            return
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        odds.to_csv(output_path, index=False, encoding="utf-8")
+        append_odds_history(odds, data_dir / "odds_history.csv")
+        write_status(
+            data_dir / "odds_api_status.json",
+            rows=len(odds),
+            raw_path=raw_path,
+            config=config,
+            usage_headers=usage_headers,
+            unmatched_events=unmatched,
+        )
+    except Exception as exc:
+        _write_error_status(
+            data_dir / "odds_api_status.json",
+            sport=sport,
+            regions=regions,
+            markets=markets,
+            error=exc,
+        )
+
+
+def load_data(data_dir: Path = DATA_DIR, *, api_key: str | None = None) -> dict[str, pd.DataFrame]:
+    api_key = api_key or os.getenv("THE_ODDS_API_KEY")
+    if api_key:
+        update_live_odds(api_key=api_key, data_dir=data_dir)
+
     matches = pd.read_csv(data_dir / "matches.csv")
     matches["neutral_site"] = matches["neutral_site"].astype(bool)
     odds, odds_source = _load_odds(data_dir)
