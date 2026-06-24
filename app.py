@@ -243,7 +243,7 @@ def render_narrative_report(report: dict[str, object]) -> None:
     )
     narrative_scores = list(report.get("narrative_scores", []))
     if narrative_scores:
-        st.markdown("**叙事比分候选（不改变量化概率）**")
+        st.markdown("**叙事比分候选（1-2个，不改变量化概率）**")
         for item in narrative_scores:
             st.write(f"- {item['score']}：{item['tag']}。{item['reason']}")
 

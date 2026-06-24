@@ -197,7 +197,6 @@ def _narrative_score_candidates(
     iching: dict[str, Any],
     tarot: dict[str, Any],
 ) -> list[dict[str, str]]:
-    rng = _seeded_rng(team_a, team_b, match_time, "narrative-score-candidates")
     future_score = _future_card_score(tarot)
     volatile = (
         int(iching["changing_line"]) in {3, 4, 6}
@@ -206,58 +205,37 @@ def _narrative_score_candidates(
     )
 
     if narrative_score <= -4:
-        pool = [
+        selected = [
             ("0-1", "爆冷小胜", f"{team_b} 低位守住后偷到关键球"),
-            ("1-2", "反向剧情", f"{team_a} 压上后被 {team_b} 打出转换"),
-            ("1-1", "热门受阻", "主动方久攻不下，后段被拖入拉锯"),
-            ("0-0", "低比分僵局", "节奏被压低，进攻质量不足以打穿防线"),
-            ("2-3", "大波动冷门", "后段大开大合，弱势叙事方反而抓住最后机会"),
         ]
+        if volatile:
+            selected.append(("1-2", "反向剧情", f"{team_a} 压上后被 {team_b} 打出转换"))
     elif narrative_score <= -1:
-        pool = [
+        selected = [
             ("1-1", "平局冷门", "热门优势不顺，比赛被拖进消耗战"),
-            ("0-1", "低比分爆冷", f"{team_b} 依靠反击或定位球建立优势"),
-            ("1-2", "后段反转", "主动方阵型拉长后给出身后空间"),
-            ("0-0", "沉闷僵局", "双方都难以连续制造高质量机会"),
-            ("2-2", "开放平局", "若早早进球，比赛会进入互相修正的高波动区"),
         ]
+        if volatile:
+            selected.append(("0-1", "低比分爆冷", f"{team_b} 依靠反击或定位球建立优势"))
     elif narrative_score < 1:
-        pool = [
+        selected = [
             ("1-1", "均势拉锯", "双方叙事力量接近，一球后仍可能回到平衡"),
-            ("0-0", "低节奏僵局", "前段试探过长，进球窗口被压缩"),
-            ("2-2", "节奏失控", "中后段互有攻防，防线距离被拉开"),
-            ("1-0", f"{team_a} 艰难小胜", "主动方把一次优势转化为结果"),
-            ("0-1", f"{team_b} 冷门小胜", "反击方抓住少数高价值机会"),
         ]
+        if volatile:
+            selected.append(("0-0", "低节奏僵局", "前段试探过长，进球窗口被压缩"))
     elif narrative_score < 4:
-        pool = [
+        selected = [
             ("1-0", f"{team_a} 小胜", "主动方有优势但兑现效率一般"),
-            ("2-1", f"{team_a} 险胜", "优势方能进球，也会给对手反击窗口"),
-            ("1-1", "优势受阻", "控球或压迫未必等于持续破门"),
-            ("2-2", "高波动平局", "若早段打开局面，后段可能互相交换机会"),
-            ("0-1", "反向冷门候选", f"{team_a} 冒进时，{team_b} 有偷袭空间"),
         ]
+        if volatile:
+            selected.append(("2-1", f"{team_a} 险胜", "优势方能进球，也会给对手反击窗口"))
     else:
-        pool = [
+        selected = [
             ("2-0", f"{team_a} 优势兑现", "主动方节奏和质量都能持续压制"),
-            ("2-1", f"{team_a} 控局险胜", "强势方占优，但对手仍有破门窗口"),
-            ("3-1", "后段拉开", "领先后空间变大，比分可能被继续放大"),
-            ("1-0", "保守小胜", "优势方更重视控制风险而不是打穿比分"),
-            ("1-2", "反向冷门候选", f"{team_a} 叙事过热时，{team_b} 可能打出反扑"),
         ]
+        if volatile:
+            selected.append(("3-1", "后段拉开", "领先后空间变大，比分可能被继续放大"))
 
-    if volatile:
-        swing = (
-            ("2-3", "极端波动", f"动爻/未来牌提示后段变数，{team_b} 有冷门大比分分支")
-            if narrative_score <= 0
-            else ("3-2", "极端波动", f"动爻/未来牌提示后段变数，{team_a} 可能险胜但防线不稳")
-        )
-        pool.insert(1, swing)
-
-    primary = pool[:2]
-    rest = pool[2:]
-    rng.shuffle(rest)
-    selected = primary + rest[:2]
+    selected = selected[:2]
     return [
         {"score": score, "tag": tag, "reason": reason}
         for score, tag, reason in selected
@@ -267,12 +245,9 @@ def _narrative_score_candidates(
 def _narrative_score_text(narrative_scores: list[dict[str, str]]) -> str:
     if not narrative_scores:
         return ""
-    items = [
-        f"{item['score']}（{item['tag']}：{item['reason']}）"
-        for item in narrative_scores[:4]
-    ]
+    items = [f"{item['score']}（{item['tag']}：{item['reason']}）" for item in narrative_scores[:2]]
     return (
-        "叙事比分候选（允许偏离量化模型）："
+        "叙事比分候选（仅保留1-2个，允许偏离量化模型）："
         + "；".join(items)
         + "。这些比分只用于赛前报告，不修改真实预测概率。"
     )
