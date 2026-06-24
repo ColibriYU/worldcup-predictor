@@ -158,6 +158,7 @@ def load_data(data_dir: Path = DATA_DIR, *, api_key: str | None = None) -> dict[
         "past_results": pd.read_csv(data_dir / "past_results.csv"),
         "worldcup_schedule": pd.read_csv(data_dir / "worldcup_schedule.csv"),
         "group_standings": _read_optional_csv(data_dir / "group_standings.csv"),
+        "knockout_paths": _read_optional_csv(data_dir / "knockout_paths.csv"),
         "team_aliases": pd.read_csv(data_dir / "team_aliases.csv"),
         "odds_source": pd.DataFrame([{"source": odds_source}]),
         "odds_history": _read_optional_csv(data_dir / "odds_history.csv"),

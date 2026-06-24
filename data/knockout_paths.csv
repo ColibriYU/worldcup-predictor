@@ -1,0 +1,37 @@
+group,finish,round32_match,opponent_slot,opponent_groups,path_note
+Group A,winner,79,Best third-place team from Group C/E/F/H/I,C;E;F;H;I,Group winner enters a third-place-team matchup; exact opponent depends on the best-third allocation table.
+Group A,runner_up,73,Runner-up Group B,B,Runner-up path is fixed against the Group B runner-up.
+Group A,third,74 or 82,Winner Group E or Winner Group G,E;G,Third-place assignment depends on which eight third-place teams qualify.
+Group B,winner,85,Best third-place team from Group E/F/G/I/J,E;F;G;I;J,Group winner enters a third-place-team matchup; exact opponent depends on the best-third allocation table.
+Group B,runner_up,73,Runner-up Group A,A,Runner-up path is fixed against the Group A runner-up.
+Group B,third,74 or 81,Winner Group E or Winner Group D,E;D,Third-place assignment depends on which eight third-place teams qualify.
+Group C,winner,76,Runner-up Group F,F,Group winner path is fixed against the Group F runner-up.
+Group C,runner_up,75,Winner Group F,F,Runner-up path is fixed against the Group F winner.
+Group C,third,74 or 77 or 79,Winner Group E or Winner Group I or Winner Group A,E;I;A,Third-place assignment depends on which eight third-place teams qualify.
+Group D,winner,81,Best third-place team from Group B/E/F/I/J,B;E;F;I;J,Group winner enters a third-place-team matchup; exact opponent depends on the best-third allocation table.
+Group D,runner_up,88,Runner-up Group G,G,Runner-up path is fixed against the Group G runner-up.
+Group D,third,74 or 77 or 87,Winner Group E or Winner Group I or Winner Group K,E;I;K,Third-place assignment depends on which eight third-place teams qualify.
+Group E,winner,74,Best third-place team from Group A/B/C/D/F,A;B;C;D;F,Group winner enters a third-place-team matchup; exact opponent depends on the best-third allocation table.
+Group E,runner_up,78,Runner-up Group I,I,Runner-up path is fixed against the Group I runner-up.
+Group E,third,79 or 80 or 81 or 82 or 85 or 87,Winner Group A/L/D/G/B/K,A;L;D;G;B;K,Third-place assignment depends on which eight third-place teams qualify.
+Group F,winner,75,Runner-up Group C,C,Group winner path is fixed against the Group C runner-up.
+Group F,runner_up,76,Winner Group C,C,Runner-up path is fixed against the Group C winner.
+Group F,third,74 or 77 or 79 or 81 or 85,Winner Group E/I/A/D/B,E;I;A;D;B,Third-place assignment depends on which eight third-place teams qualify.
+Group G,winner,82,Best third-place team from Group A/E/H/I/J,A;E;H;I;J,Group winner enters a third-place-team matchup; exact opponent depends on the best-third allocation table.
+Group G,runner_up,88,Runner-up Group D,D,Runner-up path is fixed against the Group D runner-up.
+Group G,third,77 or 85,Winner Group I or Winner Group B,I;B,Third-place assignment depends on which eight third-place teams qualify.
+Group H,winner,84,Runner-up Group J,J,Group winner path is fixed against the Group J runner-up.
+Group H,runner_up,86,Winner Group J,J,Runner-up path is fixed against the Group J winner.
+Group H,third,77 or 79 or 80 or 82,Winner Group I or Winner Group A or Winner Group L or Winner Group G,I;A;L;G,Third-place assignment depends on which eight third-place teams qualify.
+Group I,winner,77,Best third-place team from Group C/D/F/G/H,C;D;F;G;H,Group winner enters a third-place-team matchup; exact opponent depends on the best-third allocation table.
+Group I,runner_up,78,Runner-up Group E,E,Runner-up path is fixed against the Group E runner-up.
+Group I,third,79 or 80 or 81 or 82 or 85 or 87,Winner Group A/L/D/G/B/K,A;L;D;G;B;K,Third-place assignment depends on which eight third-place teams qualify.
+Group J,winner,86,Runner-up Group H,H,Group winner path is fixed against the Group H runner-up.
+Group J,runner_up,84,Winner Group H,H,Runner-up path is fixed against the Group H winner.
+Group J,third,80 or 81 or 82 or 85 or 87,Winner Group L/D/G/B/K,L;D;G;B;K,Third-place assignment depends on which eight third-place teams qualify.
+Group K,winner,87,Best third-place team from Group D/E/I/J/L,D;E;I;J;L,Group winner enters a third-place-team matchup; exact opponent depends on the best-third allocation table.
+Group K,runner_up,83,Runner-up Group L,L,Runner-up path is fixed against the Group L runner-up.
+Group K,third,80,Winner Group L,L,Third-place assignment depends on which eight third-place teams qualify.
+Group L,winner,80,Best third-place team from Group E/H/I/J/K,E;H;I;J;K,Group winner enters a third-place-team matchup; exact opponent depends on the best-third allocation table.
+Group L,runner_up,83,Runner-up Group K,K,Runner-up path is fixed against the Group K runner-up.
+Group L,third,87,Winner Group K,K,Third-place assignment depends on which eight third-place teams qualify.

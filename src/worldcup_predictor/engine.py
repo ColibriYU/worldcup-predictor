@@ -8,7 +8,7 @@ import pandas as pd
 from .bayesian import bayesian_elo, state_factor
 from .dixon_coles import dixon_coles_matrix, dixon_coles_probabilities
 from .external import aggregate_external_predictions
-from .group_context import group_stage_factors
+from .group_context import group_stage_factors, knockout_context
 from .indices import big_score_index, upset_index
 from .market_flow import market_flow_flags, market_flow_probabilities
 from .monte_carlo import simulate_match
@@ -59,6 +59,7 @@ def predict_match(
     matchup_factors: pd.DataFrame | None = None,
     past_results: pd.DataFrame | None = None,
     group_standings: pd.DataFrame | None = None,
+    knockout_paths: pd.DataFrame | None = None,
     config: PredictionConfig | None = None,
     odds_source: str = "odds.csv",
 ) -> dict[str, object]:
@@ -154,7 +155,21 @@ def predict_match(
         + weights[4] * market_probability
     )
 
-    final_probability = apply_market_adjustment(base_probability, bias, k=config.market_bias_k)
+    market_adjusted_probability = apply_market_adjustment(base_probability, bias, k=config.market_bias_k)
+
+    group_context = knockout_context(
+        match,
+        group_standings,
+        knockout_paths,
+        team_stats,
+    )
+    final_probability = normalize(
+        market_adjusted_probability + np.asarray(group_context["probability_delta"], dtype=float)
+    )
+
+    lambda_multiplier = group_context["lambda_multiplier"]
+    lambda_home = float(lambda_home * lambda_multiplier["home"])
+    lambda_away = float(lambda_away * lambda_multiplier["away"])
 
     matrix = dixon_coles_matrix(
         lambda_home,
@@ -193,6 +208,7 @@ def predict_match(
             [
                 {
                     "match_id": match_id,
+                    "group": match["group"],
                     "home_team": home_team,
                     "away_team": away_team,
                 }
@@ -229,6 +245,7 @@ def predict_match(
         "market_flow_probability": dict(zip(OUTCOMES, market_probability)),
         "base_probability": dict(zip(OUTCOMES, base_probability)),
         "market_bias": dict(zip(OUTCOMES, bias)),
+        "market_adjusted_probability": dict(zip(OUTCOMES, market_adjusted_probability)),
         "final_probability": dict(zip(OUTCOMES, final_probability)),
         "lambda_home": lambda_home,
         "lambda_away": lambda_away,
@@ -250,6 +267,7 @@ def predict_match(
         },
         "upset": upset,
         "big_score": big_score,
+        "group_context": group_context,
         "layer_weights": dict(
             zip(
                 ["elo", "odds", "external", "xg", "market_flow"],

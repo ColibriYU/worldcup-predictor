@@ -22,7 +22,7 @@ from worldcup_predictor.monitoring import combined_value_bets, odds_change_summa
 from worldcup_predictor.narrative import build_narrative_report
 
 
-DATA_CACHE_VERSION = "narrative-v2"
+DATA_CACHE_VERSION = "group-context-v1"
 
 
 def secret_value(name: str) -> str | None:
@@ -330,6 +330,44 @@ def render_narrative_report(report: dict[str, object]) -> None:
         )
 
 
+def render_group_context(prediction: dict[str, object]) -> None:
+    context = prediction.get("group_context", {})
+    if not context or not context.get("available"):
+        return
+
+    rows = []
+    outcome_labels = {"win": "胜", "draw": "平", "loss": "负"}
+    for side, team_name in [("home", prediction["home_team"]), ("away", prediction["away_team"])]:
+        team_context = context.get(side)
+        if not team_context:
+            continue
+        scenarios = team_context.get("scenarios", {})
+        for outcome in ["win", "draw", "loss"]:
+            scenario = scenarios.get(outcome)
+            if not scenario:
+                continue
+            rows.append(
+                {
+                    "球队": team_name,
+                    "本场结果": outcome_labels[outcome],
+                    "赛后积分": scenario["points"],
+                    "预计排名": scenario["finish_label"],
+                    "出线安全度": pct(float(scenario["qualification_score"])),
+                    "潜在路径": scenario["opponent_hint"],
+                }
+            )
+
+    st.markdown("**小组出线 / 淘汰赛路径修正**")
+    st.write(f"- {context['summary']}")
+    st.write(
+        f"- 修正后预期进球倍率：{prediction['home_team']} "
+        f"{context['lambda_multiplier']['home']:.2f}x，"
+        f"{prediction['away_team']} {context['lambda_multiplier']['away']:.2f}x"
+    )
+    if rows:
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+
 def usage_summary(status: pd.DataFrame) -> dict[str, str]:
     if status.empty:
         return {
@@ -475,6 +513,7 @@ def render_match_card(match: pd.Series, prediction: dict[str, object]) -> None:
             for flag in prediction["market_flow_flags"][:2]:
                 st.write(f"- {flag}")
             st.write(f"- {prediction['matchup_summary']}")
+            render_group_context(prediction)
 
         with st.expander("查看7层模型拆解和比分矩阵"):
             breakdown = pd.DataFrame(
@@ -517,6 +556,12 @@ def render_match_card(match: pd.Series, prediction: dict[str, object]) -> None:
                     },
                     {
                         "来源": "市场修正后",
+                        home: pct(prediction["market_adjusted_probability"]["home"]),
+                        "平局": pct(prediction["market_adjusted_probability"]["draw"]),
+                        away: pct(prediction["market_adjusted_probability"]["away"]),
+                    },
+                    {
+                        "来源": "出线路径修正后",
                         home: pct(prediction["final_probability"]["home"]),
                         "平局": pct(prediction["final_probability"]["draw"]),
                         away: pct(prediction["final_probability"]["away"]),
@@ -650,6 +695,8 @@ required_keys = {
 if not required_keys.issubset(data):
     st.cache_data.clear()
     data = load_data(api_key=odds_api_key)
+if "knockout_paths" not in data:
+    data["knockout_paths"] = pd.DataFrame()
 
 matches = data["matches"]
 schedule = data["worldcup_schedule"]
@@ -728,18 +775,19 @@ for _, fixture in available_fixture.iterrows():
         }
     )
     prediction = predict_match(
-        match_row,
-        data["team_stats"],
-        data["odds"],
-        data["factors"],
-        data["external_predictions"],
-        data["xg_inputs"],
-        data["team_form"],
-        data["matchup_factors"],
-        data["past_results"],
-        data["group_standings"],
-        config,
-        odds_source,
+        match=match_row,
+        team_stats=data["team_stats"],
+        odds=data["odds"],
+        factors=data["factors"],
+        external_predictions=data["external_predictions"],
+        xg_inputs=data["xg_inputs"],
+        team_form=data["team_form"],
+        matchup_factors=data["matchup_factors"],
+        past_results=data["past_results"],
+        group_standings=data["group_standings"],
+        knockout_paths=data["knockout_paths"],
+        config=config,
+        odds_source=odds_source,
     )
     predictions.append(prediction)
     render_match_card(fixture, prediction)
